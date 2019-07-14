@@ -1,5 +1,4 @@
+import { redisOptions } from './redis-options'
 import * as Redis from 'ioredis'
 
-let host = process.env.REDIS_HOST || 'localhost'
-
-export const redis = new Redis({ host })
+export const redis = new Redis(redisOptions)

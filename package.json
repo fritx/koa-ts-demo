@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "dotenv-cli": "^2.0.0",
-    "ioredis": "^4.10.0",
+    "ioredis": "^4.11.2",
     "koa": "^2.7.0",
     "koa-body": "^4.1.0",
     "koa-helmet": "^4.2.0",

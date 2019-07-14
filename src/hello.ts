@@ -1,5 +1,6 @@
 import './sourcemap-polyfill'
 import { promises as fs } from 'fs'
+import { redis } from './redis'
 
 type Hello = string
 
@@ -13,8 +14,13 @@ async function hello(str: Hello) {
 
   console.trace('here')
 
-  setInterval(() => {
-    console.log('loop')
+  let prefixRedis = process.env.PREFIX_NODE_APP_REDIS
+  let keyVisit = `${prefixRedis}visit`
+
+  setInterval(async () => {
+    let count = +(await redis.get(keyVisit)) || 0
+    console.log(['visit', count])
+    await redis.set(keyVisit, count + 1)
   }, 3000)
 
   throw new Error('boom')

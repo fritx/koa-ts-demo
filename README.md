@@ -13,6 +13,7 @@
 - ts sourcemap support
 - npm start & nodemon dev
 - dotenv-cli & .env
+- redis options, ioredis
 
 ### Todo
 
