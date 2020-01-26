@@ -11,6 +11,7 @@ module.exports = {
     sourceType: "module", // Allows for the use of imports
   },
   rules: {
+    'prefer-const': 'off',
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-use-before-define": "off",
