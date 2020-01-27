@@ -1,10 +1,11 @@
 import * as cheerio from 'cheerio'
+import { ppify } from './utils'
 
 export let ppPrefix = '/proxy/'
 
 export let ppEncodingMode: PpEncodingMode = 'try-unzip'
 
-let processScript = str => {
+let wrapScript = (str: string) => {
   return `
     with (__fakedWindow) {
       ${str}
@@ -21,14 +22,23 @@ export let ppRulesConfig: PpRule[] = [
       let html = res._ppBody.toString()
       let $ = cheerio.load(html)
 
-      $('a').each((i, el) => {
-        let s = $(el).attr('href')
-        if (/^https?:/.test(s)) {
-          // todo: use ppify
-          let ppEntry = `${res._ppCtx.origin}${ppPrefix}`
-          s = `${ppEntry}${s}`
-          $(el).attr('href', s)
-        }
+        // todo all atrrs of all tags??
+      ;[
+        ['a', 'href'],
+        ['base', 'href'],
+        ['img', 'src'],
+        ['frame', 'src'],
+        ['iframe', 'src'],
+        ['script', 'src'],
+        ['link', 'href'],
+      ].forEach(([tagName, ...attrs]) => {
+        attrs.forEach(attr => {
+          $(tagName).each((i, el) => {
+            let s = $(el).attr(attr)
+            s = ppify(s, res._ppCtx)
+            $(el).attr(attr, s)
+          })
+        })
       })
 
       // cheerio script looks like
@@ -41,7 +51,7 @@ export let ppRulesConfig: PpRule[] = [
             .trim()
         ) {
           let s = $(el).html()
-          s = processScript(s)
+          s = wrapScript(s)
           $(el).text(s)
         }
       })
@@ -49,10 +59,13 @@ export let ppRulesConfig: PpRule[] = [
       $('<script>')
         .text(
           `{
-          let ppPrefix = '/proxy/'
+          let ppPrefix = ${JSON.stringify(ppPrefix)}
+          let ppEntry = \`\${location.origin}\${ppPrefix}\`
           let ppify = url => {
             if (/^(https?:)?\\/\\//i.test(url)) {
-              return \`\${location.origin}\${ppPrefix}\${url}\`
+              if (!url.startsWith(ppEntry)) {
+                return \`\${ppEntry}\${url}\`
+              }
             }
             return url
           }
@@ -84,7 +97,13 @@ export let ppRulesConfig: PpRule[] = [
             get: (t, k) => {
               if (k === 'location') return __fakedLocation
               let v = t[k]
-              if (typeof v === 'function') {
+              if (k === 'open') {
+                v = (url, target, features) => {
+                  url = ppify(url)
+                  console.log(['url', url])
+                  return window.open(url, target, features)
+                }
+              } else if (typeof v === 'function') {
                 if (v.toString().includes('{ [native code] }')) {
                   v = v.bind(window)
                 }

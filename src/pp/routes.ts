@@ -25,8 +25,9 @@ export let ppRoutes: Middleware = async ctx => {
       // could lead to like `https://vendor/blog.css`
       // due to probably chrome's bug
       if (!targetUrlPath) {
-        console.log(['redirect to', targetUrl + '/'])
-        ctx.redirect(targetUrl + '/')
+        let newUrl = ctx.href.replace(/(\?)|$/, '/$1')
+        console.log(['redirect to', newUrl])
+        ctx.redirect(newUrl)
         return
       }
       ctx.respond = false
