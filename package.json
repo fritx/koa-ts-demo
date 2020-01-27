@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "main": "./dist/app",
   "scripts": {
-    "dev": "dotenv nodemon .",
+    "dev": "dotenv nodemon -- --inspect=9229 .",
     "start": "dotenv node .",
     "test": "npm run build && dotenv ava",
     "lint": "eslint src/**/*.ts",

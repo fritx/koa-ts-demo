@@ -1,3 +1,4 @@
+import './sourcemap-polyfill'
 import * as Koa from 'koa'
 import * as helmet from 'koa-helmet'
 import * as ratelimit from 'koa-ratelimit'

@@ -7,13 +7,18 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "nodemon",
-      "runtimeExecutable": "nodemon",
-      "program": "${workspaceFolder}/src/app.ts",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "name": "Launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      // "console": "integratedTerminal", // for more env path
       "restart": true,
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "port": 9229
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach",
+      "port": 9229
     }
   ]
 }
