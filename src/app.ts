@@ -14,6 +14,7 @@ app.on('error', err => {
   const status = err.status || 500
   // tslint:disable-next-line no-console
   console.error(`[koa error] status=${status}`, 'err=', err)
+  debugger
 })
 
 if (process.env.NODE_ENV === 'production') {
@@ -35,7 +36,7 @@ if (process.env.NODE_ENV === 'production') {
   )
 }
 
-app.use(helmet())
+// app.use(helmet()) // 影响baidu登录?
 
 app.use(routes)
 

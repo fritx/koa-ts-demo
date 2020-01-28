@@ -1,9 +1,21 @@
-import * as cheerio from 'cheerio'
+import { cheerio } from './cheerio'
 import { ppify } from './utils'
 
 export let ppPrefix = '/proxy/'
 
 export let ppEncodingMode: PpEncodingMode = 'try-unzip'
+
+let tagAttrsArr = [
+  ['a', 'href'],
+  ['area', 'href'],
+  ['base', 'href'],
+  ['form', 'action'],
+  ['img', 'src'],
+  ['frame', 'src'],
+  ['iframe', 'src'],
+  ['script', 'src'],
+  ['link', 'href'],
+]
 
 let wrapScript = (str: string) => {
   return `
@@ -22,21 +34,13 @@ export let ppRulesConfig: PpRule[] = [
       let html = res._ppBody.toString()
       let $ = cheerio.load(html)
 
-        // todo all atrrs of all tags??
-      ;[
-        ['a', 'href'],
-        ['base', 'href'],
-        ['img', 'src'],
-        ['frame', 'src'],
-        ['iframe', 'src'],
-        ['script', 'src'],
-        ['link', 'href'],
-      ].forEach(([tagName, ...attrs]) => {
+      // todo all atrrs of all tags??
+      tagAttrsArr.forEach(([tag, ...attrs]) => {
         attrs.forEach(attr => {
-          $(tagName).each((i, el) => {
+          $(tag).each((i, el) => {
             let s = $(el).attr(attr)
-            s = ppify(s, res._ppCtx)
-            $(el).attr(attr, s)
+            let ns = ppify(s, res._ppCtx)
+            $(el).attr(attr, ns)
           })
         })
       })
@@ -57,18 +61,36 @@ export let ppRulesConfig: PpRule[] = [
       })
 
       $('<script>')
+        .attr('id', 'ppPreloadScript')
         .text(
           `{
+          let tagAttrsArr = ${JSON.stringify(tagAttrsArr)}
           let ppPrefix = ${JSON.stringify(ppPrefix)}
+
+          let ppPathname = location.pathname // to store against history pushState api
           let ppEntry = \`\${location.origin}\${ppPrefix}\`
+          let targetOrigin = location.pathname.replace(ppPrefix, '').replace(/\\/.*/, '')
+          if (!/^https?:\\/\\//i.test(targetOrigin)) {
+            if (targetOrigin.startsWith('//')) {
+              targetOrigin = 'https:' + targetOrigin
+            } else {
+              targetOrigin = 'https://' + targetOrigin
+            }
+          }
+
           let ppify = url => {
             if (/^(https?:)?\\/\\//i.test(url)) {
               if (!url.startsWith(ppEntry)) {
                 return \`\${ppEntry}\${url}\`
               }
+            } else if (url.startsWith('/')) {
+              if (!url.startsWith(ppPathname)) {
+                return url.replace(/^\\//, ppPathname)
+              }
             }
             return url
           }
+          window.__ppify = ppify
 
           // todo wrap & bind
           // ;['setTimeout', 'setInterval'].forEach(k => {
@@ -100,7 +122,6 @@ export let ppRulesConfig: PpRule[] = [
               if (k === 'open') {
                 v = (url, target, features) => {
                   url = ppify(url)
-                  console.log(['url', url])
                   return window.open(url, target, features)
                 }
               } else if (typeof v === 'function') {
@@ -119,6 +140,38 @@ export let ppRulesConfig: PpRule[] = [
             }
           })
           window.__originalWindow = window
+
+          {
+            ;['appendChild', 'insertBefore'].forEach(k => {
+              let _fn = Node.prototype[k]
+              Node.prototype[k] = function (newNode, ...rest) {
+                tagAttrsArr.some(([tag, ...attrs]) => {
+                  if (newNode.tagName === tag.toUpperCase()) {
+                    attrs.forEach(attr => {
+                      // or setAttribute?
+                      newNode[attr] = ppify(newNode[attr])
+                    })
+                    return true
+                  }
+                })
+                return _fn.call(this, newNode, ...rest)
+              }
+            })
+          }
+          
+          {
+            let _open=XMLHttpRequest.prototype.open
+            XMLHttpRequest.prototype.open = function (method, url) {
+              url = ppify(url)
+              return _open.call(this, method, url)
+            }
+          }
+
+          {
+            // placed at the end
+            let s = document.querySelector('#ppPreloadScript')
+            s.parentNode.removeChild(s)
+          }
           }`
         )
         .prependTo($('head'))
@@ -140,7 +193,9 @@ export let ppRulesConfig: PpRule[] = [
       return Boolean(ctx.response.is('application/javascript'))
     },
     transform: (req, res) => {
-      res._ppBody = res._ppBody
+      let s = res._ppBody
+      s = wrapScript(s)
+      res._ppBody = s
     },
   },
 ]

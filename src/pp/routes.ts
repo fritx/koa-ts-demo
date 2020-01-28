@@ -33,7 +33,7 @@ export let ppRoutes: Middleware = async ctx => {
       ctx.respond = false
 
       if (ppEncodingMode === 'disable-accept') {
-        request.headers['accept-encoding'] = ''
+        // request.headers['accept-encoding'] = ''
       }
 
       request.url = targetUrlPath
