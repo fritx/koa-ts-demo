@@ -32,6 +32,7 @@ export let ppify = (v: any, ppCtx: Context) => {
     //     nv = `${originalPathname.replace(/\/+$/, '')}${v}`
     //   }
     // }
+
     // let originalPathname = ppCtx.originalUrl.replace(ppCtx.search, '')
     let ppPathname = ppCtx.originalUrl.replace(/\?.*/, '')
     let ppEntry = `${ppCtx.origin}${ppPrefix}`
@@ -47,14 +48,12 @@ export let ppify = (v: any, ppCtx: Context) => {
         nv = `${_entry}${v}` // keep original ^//
       }
     } else if (v.startsWith('/')) {
-      let _path = ppPathname
-        .split('/')
-        .slice(0, 3)
-        .join('/')
+      let _path =
+        ppPrefix +
+        ppPathname.replace(ppPrefix, '').match(/^(?:(?:https?:)?\/\/)?.+?\//)[0]
       if (!v.startsWith(_path)) {
         nv = `${_path.replace(/\/+$/, '')}${v}`
       }
-      console.log(['v', v, nv])
     }
   }
   return nv
