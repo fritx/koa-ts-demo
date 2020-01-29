@@ -4,6 +4,7 @@
 
 ### Changelog
 
+- location - https://developer.mozilla.org/en-US/docs/Web/API/Location
 - debugger & inspect - https://nodejs.org/dist/latest-v12.x/docs/api/debugger.html
 - content-length & proxy approach & pp vs wxproxy - https://github.com/fritx/wxproxy/blob/master/index.js#L81
 - zlib unzip - [Decompressing HTTP requests and responses](https://nodejs.org/dist/latest-v12.x/docs/api/zlib.html#zlib_class_zlib_unzip)

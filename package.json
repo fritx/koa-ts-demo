@@ -3,12 +3,13 @@
   "version": "0.0.0",
   "main": "./dist/app",
   "scripts": {
+    "clean": "rm -rf dist",
     "dev": "dotenv nodemon -- --inspect=9229 .",
     "start": "dotenv node .",
     "test": "npm run build && dotenv ava",
     "lint": "eslint src/**/*.ts",
-    "watch": "tsc --watch",
-    "build": "tsc"
+    "watch": "npm run clean && tsc --watch",
+    "build": "npm run clean && tsc"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",

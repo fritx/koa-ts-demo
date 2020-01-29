@@ -1,9 +1,12 @@
-import { cheerio } from './cheerio'
+import { cheerio } from '../lib/cheerio'
 import { ppify } from './utils'
 
 export let ppPrefix = '/proxy/'
 
-export let ppEncodingMode: PpEncodingMode = 'try-unzip'
+// sometimes Error: unexpected end of file
+// at Zlib.zlibOnError [as onerror] (zlib.js:170:17)
+// export let ppEncodingMode: PpEncodingMode = 'try-unzip'
+export let ppEncodingMode: PpEncodingMode = 'disable-accept'
 
 let tagAttrsArr = [
   ['a', 'href'],
@@ -28,7 +31,12 @@ let wrapScript = (str: string) => {
 export let ppRulesConfig: PpRule[] = [
   {
     match: ctx => {
-      return Boolean(ctx.response.is('text/html'))
+      let typeLikeHtml = Boolean(ctx.response.is('text/html'))
+      let bodyLikeHtml = ctx.body
+        .toString()
+        .trim()
+        .startsWith('<')
+      return typeLikeHtml && bodyLikeHtml // fixmebody
     },
     transform: (req, res) => {
       let html = res._ppBody.toString()
@@ -67,9 +75,10 @@ export let ppRulesConfig: PpRule[] = [
           let tagAttrsArr = ${JSON.stringify(tagAttrsArr)}
           let ppPrefix = ${JSON.stringify(ppPrefix)}
 
+          let ppOrigin = location.origin
+          let ppEntry = \`\${ppOrigin}\${ppPrefix}\`
           let ppPathname = location.pathname // to store against history pushState api
-          let ppEntry = \`\${location.origin}\${ppPrefix}\`
-          let targetOrigin = location.pathname.replace(ppPrefix, '').replace(/\\/.*/, '')
+          let targetOrigin = ppPathname.replace(ppPrefix, '').match(/^(?:(?:https?:)?\\/\\/)?[^/]+/)[0]
           if (!/^https?:\\/\\//i.test(targetOrigin)) {
             if (targetOrigin.startsWith('//')) {
               targetOrigin = 'https:' + targetOrigin
@@ -77,11 +86,28 @@ export let ppRulesConfig: PpRule[] = [
               targetOrigin = 'https://' + targetOrigin
             }
           }
+          let targetDoamin = targetOrigin.replace(/^(https?:)?\\/\\//, '')
+          let targetPathname = ppPathname.replace(ppPrefix, '').replace(targetOrigin, '')
+          let targetPath = \`\${targetPathname}\${location.search}\${location.hash}\`
+          let targetHref = \`\${targetOrigin}\${targetPath}\`
+
+          // @fixme sync with node
+          let deppify = url => {
+            // todo
+          }
 
           let ppify = url => {
             if (/^(https?:)?\\/\\//i.test(url)) {
               if (!url.startsWith(ppEntry)) {
-                return \`\${ppEntry}\${url}\`
+                // @note baidu history pushState
+                // 'http://localhost:3000/s?ie=utf-8&f=8&r'
+                // => 'http://localhost:3000/proxy/http://localhost:3000/s?ie=utf-8&f=8&r
+                if (url.startsWith(ppOrigin)) {
+                  let linted = url.replace(ppOrigin, '')
+                  return ppify(linted)
+                } else {
+                  return \`\${ppEntry}\${url}\`
+                }
               }
             } else if (url.startsWith('/')) {
               if (!url.startsWith(ppPathname)) {
@@ -91,6 +117,26 @@ export let ppRulesConfig: PpRule[] = [
             return url
           }
           window.__ppify = ppify
+
+          let simpleReplace = markup => {
+            let sandbox = document.createElement('div')
+            sandbox.innerHTML = markup
+            tagAttrsArr.forEach(([tag, ...attrs]) => {
+              attrs.forEach(attr => {
+                sandbox.querySelectorAll(tag).forEach(el => {
+                  el[attr] = ppify(el[attr])
+                })
+              })
+            })
+            return sandbox.innerHTML
+          }
+
+          let fakeToStringAndValueOf = (fn, name) => {
+            // todo further deep
+            fn.toString = () => \`function \${name}() { [native code] }\`
+            fn.toString.toString = () => 'function toString() { [native code] }'
+            fn.valueOf.toString = () => 'function valueOf() { [native code] }'
+          }
 
           // todo wrap & bind
           // ;['setTimeout', 'setInterval'].forEach(k => {
@@ -105,6 +151,24 @@ export let ppRulesConfig: PpRule[] = [
 
           window.__fakedLocation = new Proxy(location, {
             get: (t, k) => {
+              // todo more location.*
+              if (k === 'href') return targetHref
+              if (k === 'replace') { // Error the proxy did not return its actual value
+                return function (url) {
+                  let nurl = ppify(url)
+                  return location.replace.call(location, nurl)
+                }
+              }
+              if (k === 'toString') { // Error the proxy did not return its actual value
+                let fn = () => targetHref
+                fakeToStringAndValueOf(fn, 'toString')
+                return fn
+              }
+              if (k === 'valueOf') { // Error the proxy did not return its actual value
+                let fn = () => this
+                fakeToStringAndValueOf(fn, 'valueOf')
+                return fn
+              }
               return t[k]
             },
             set: (t, k, v) => {
@@ -115,18 +179,54 @@ export let ppRulesConfig: PpRule[] = [
               t[k] = v
             }
           })
-          window.__fakedWindow = new Proxy(window, {
+          window.__fakedDocument = new Proxy(document, {
             get: (t, k) => {
               if (k === 'location') return __fakedLocation
+              let v = t[k]
+              // todo more document.*
+              if (['URL', 'baseURI', 'documentURI', 'domain', 'referrer'].includes(k)) return deppify(v)
+              // if (k === 'domain') return targetDoamin
+              // if (k === 'baseURI') return targetHref
+
+              if (['write', 'writeln'].includes(k)) {
+                v = function (markup) {
+                  let newMarkup = simpleReplace(markup)
+                  return document[k].call(document, newMarkup)
+                }
+              } else if (typeof v === 'function') {
+                if (v.toString().includes('{ [native code] }')) {
+                  if (!v.prototype) { // avoid Window, Object
+                    v = v.bind(document)
+                  }
+                }
+              }
+              return v
+            },
+            set: (t, k, v) => {
+              t[k] = v
+            }
+          })
+          let _window = new Proxy(window, {
+            get: (t, k) => {
+              // if (k === 'top') return _window // Error the proxy did not return its actual value
+              // if (k === 'parent') return _window // Error the proxy did not return its actual value
+              // if (k === 'window') return _window // Error the proxy did not return its actual value
+              if (k === 'location') return __fakedLocation
+              if (k === 'document') return __fakedDocument
               let v = t[k]
               if (k === 'open') {
                 v = (url, target, features) => {
                   url = ppify(url)
                   return window.open(url, target, features)
                 }
+              } else if (k === 'valueOf') {
+                v = () => _window
+                fakeToStringAndValueOf(v, 'valueOf')
               } else if (typeof v === 'function') {
                 if (v.toString().includes('{ [native code] }')) {
-                  v = v.bind(window)
+                  if (!v.prototype) { // avoid Window, Object
+                    v = v.bind(window)
+                  }
                 }
               }
               return v
@@ -139,6 +239,7 @@ export let ppRulesConfig: PpRule[] = [
               t[k] = v
             }
           })
+          window.__fakedWindow = _window
           window.__originalWindow = window
 
           {
@@ -160,13 +261,29 @@ export let ppRulesConfig: PpRule[] = [
           }
           
           {
-            let _open=XMLHttpRequest.prototype.open
+            let _open = XMLHttpRequest.prototype.open
             XMLHttpRequest.prototype.open = function (method, url) {
               url = ppify(url)
               return _open.call(this, method, url)
             }
           }
-
+          {
+            ;['pushState', 'replaceState'].forEach(k => {
+              let _fn = history[k]
+              history[k] = function (state, title, url) {
+                let nurl = ppify(url)
+                console.log(['history', k, url, nurl])
+                return _fn.call(this, state, title, nurl)
+              }
+            })
+          }
+          {
+            let _submit = HTMLFormElement.prototype.submit
+            HTMLFormElement.prototype.submit = function (...args) {
+              this.action = ppify(this.action)
+              return _submit.call(this, ...args)
+            }
+          }
           {
             // placed at the end
             let s = document.querySelector('#ppPreloadScript')
@@ -190,7 +307,9 @@ export let ppRulesConfig: PpRule[] = [
   },
   {
     match: ctx => {
-      return Boolean(ctx.response.is('application/javascript'))
+      return Boolean(
+        ctx.response.is(['application/javascript', 'application/x-javascript'])
+      )
     },
     transform: (req, res) => {
       let s = res._ppBody

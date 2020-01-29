@@ -1,9 +1,27 @@
+todo
+
+- document.* deppify fe
+- selfHandle vs wxproxy res.end rewrite
+- cannot rewrite window.location location.replace & location.valueOf => dont use proxy
+- window functions bind & cache memo
+
 ```js
-window.location.href = ''
-window.location = ''
-location.href = ''
-location = ''
-this === window
+document.cookie partition
+localStorage partition
+sessionStorage partition
+document.*
+document.write / writeln
+this === window // √ be window, but can not be _window
+this instanceof Window // √ be window, but can not be _window
+```
+
+```js
+window.location.href = '' // √
+window.location = '' // √
+location.href = '' // √
+location = '' // √
+this === window // √ be window, but can not be _window
+
 ```
 
 ```js
