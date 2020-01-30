@@ -1,8 +1,9 @@
 import * as HttpProxy from 'http-proxy'
-import { ppRulesConfig, ppEncodingMode } from './config'
-import * as zlib from 'zlib'
 import { Stream } from 'stream'
-import { ppify } from './utils'
+import * as zlib from 'zlib'
+import { ppEncodingMode, ppRulesConfig } from './config'
+import { setCookieRewrite } from './cookie'
+import { ppify } from './url/ppify'
 
 export let ppProxy = new HttpProxy({
   selfHandleResponse: true,
@@ -35,11 +36,12 @@ ppProxy.on('error', err => {
 
 ppProxy.on('proxyRes', (proxyRes, req, res) => {
   let ppres = res as PpServerResponse
-  res.statusCode = proxyRes.statusCode
 
   Object.keys(proxyRes.headers).forEach(k => {
     let v = proxyRes.headers[k]
     if (k === 'location') v = ppify(v, ppres._ppCtx)
+    if (k === 'access-control-allow-origin') v = ppres._ppCtx.origin
+    if (k === 'set-cookie') v = setCookieRewrite(v, ppres._ppCtx)
     res.setHeader(k, v)
   })
 
@@ -72,6 +74,11 @@ ppProxy.on('proxyRes', (proxyRes, req, res) => {
 
     let newLen = Buffer.byteLength(ppres._ppBody)
     res.setHeader('content-length', newLen)
+
+    // @note must be placed right before res.end() will take effect
+    // setting ctx.body can assign status with 200 unexpectedly
+    res.statusCode = proxyRes.statusCode
+
     res.end(ppres._ppBody)
   })
 })

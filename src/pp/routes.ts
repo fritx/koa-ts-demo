@@ -1,8 +1,8 @@
-import * as libUrl from 'url'
 import { Middleware } from 'koa'
+import * as libUrl from 'url'
+import { ppEncodingMode, ppPrefix } from './config'
 import { ppProxy } from './proxy'
-import { ppPrefix, ppEncodingMode } from './config'
-import { deppify } from './utils'
+import { deppify } from './url/deppify'
 
 let handleProxy: Middleware = async ctx => {
   let targetUrl = ''
@@ -57,6 +57,12 @@ let handleProxy: Middleware = async ctx => {
         request.headers[k] = targetValue
       }
     })
+
+    // todo baidu login
+    // http://passport.bdimg.com/passApi/js/loginv4_1b4b6b2.js
+    if (targetUrl.includes('/loginv4')) {
+      debugger
+    }
 
     ppProxy.web(req, res, {
       target: targetOrigin,

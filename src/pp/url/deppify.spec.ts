@@ -1,5 +1,5 @@
-import { deppify } from './utils'
 import test from 'ava'
+import { deppify } from './deppify'
 
 let prefixes = [
   '',
