@@ -2,6 +2,12 @@
 - [koa-ts-demo](https://github.com/fritx/koa-ts-demo)
 - [react-ts-demo](https://github.com/fritx/react-ts-demo)
 
+### Todo
+
+- vscode eslint linter duplication
+- https://sp0.baidu.com/5bU_dTmfKgQFm2e88IuM_a/w.gif cookie domain=.baidu.com
+  - new Image() & createElement img
+
 ### Changelog
 
 - location - https://developer.mozilla.org/en-US/docs/Web/API/Location

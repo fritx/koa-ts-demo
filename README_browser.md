@@ -16,8 +16,10 @@ this instanceof Window // √ be window, but can not be _window
 ```
 
 ```js
-window.location.href = '' // √
-window.location = '' // √
+window.location.replace('') // ×
+window.location.href = '' // ×
+window.location = '' // ×
+location.replace('') // √
 location.href = '' // √
 location = '' // √
 this === window // √ be window, but can not be _window

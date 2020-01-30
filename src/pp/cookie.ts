@@ -4,14 +4,15 @@ import { ppPrefix } from './config'
 
 let setCookieRewriteEach = (s: string, ctx: Context) => {
   let urlObj = safeUrlParse(ctx.originalUrl)
-  let ppPath = '/'
+  let ppPath = ppPrefix
 
   try {
-    ppPath = urlObj.pathname
+    let targetOrigin = urlObj.pathname
       .replace(ppPrefix, '')
-      .match(/^((https?:)?\/\/)?([^/]+)/i)[3]
+      .match(/^((https?:)?\/\/)?([^/]+)/i)[0]
+    ppPath = `${ppPrefix}${targetOrigin}`
   } catch (err) {
-    console.error(['ppPath err', err])
+    console.error(['cookie ppPath err', err])
   }
 
   // remove `secure`
@@ -23,7 +24,7 @@ let setCookieRewriteEach = (s: string, ctx: Context) => {
   // mutates `path`
   if (/;\s*path=.*?(;|$)/i.test(s)) {
     s = s.replace(
-      /;\s*path=(.*?)(;|$)/g,
+      /;\s*path=.*?(;|$)/g,
       `; path=${ppPath}$1`.replace(/\/+$/, '')
     )
   } else {

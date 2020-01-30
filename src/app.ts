@@ -17,7 +17,7 @@ process.on('uncaughtException', err => {
 
 app.on('error', (err, ctx) => {
   // lintError(err)
-  const status = err.status || 500
+  let status = err.status || 500
   // tslint:disable-next-line no-console
   console.error(`[koa error] status=${status}`, 'err=', err, ctx)
 

@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio'
 
 // https://github.com/cheeriojs/cheerio/issues/866#issuecomment-275699121
-const cheerioHtml = cheerio.prototype.html
+let cheerioHtml = cheerio.prototype.html
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 cheerio.prototype.html = function html(...args: any[]) {

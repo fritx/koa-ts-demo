@@ -15,6 +15,8 @@ let tagAttrsArr = [
 ]
 
 export let wrapScript = (str: string) => {
+  // @experimental
+  str = str.replace(/window\.location/g, 'location')
   return `
     with (__fakedWindow) {
       ${str}
@@ -67,7 +69,7 @@ export let rulesReplaceHtml: PpRule[] = [
       $('<script>')
         .attr('id', 'ppPreloadScript')
         .text(
-          `{
+          `{{
           let tagAttrsArr = ${JSON.stringify(tagAttrsArr)}
           let ppPrefix = ${JSON.stringify(ppPrefix)}
 
@@ -145,15 +147,18 @@ export let rulesReplaceHtml: PpRule[] = [
           //   }
           // })
 
-          window.__fakedLocation = new Proxy(location, {
+          // window.__fakedLocation = new Proxy(location, {
+          window.__fakedLocation = new Proxy({}, {
             get: (t, k) => {
               // todo more location.*
               if (k === 'href') return targetHref
               if (k === 'replace') { // Error the proxy did not return its actual value
-                return function (url) {
+                let fn = url => {
                   let nurl = ppify(url)
                   return location.replace.call(location, nurl)
                 }
+                fakeToStringAndValueOf(fn, 'replace')
+                return fn
               }
               if (k === 'toString') { // Error the proxy did not return its actual value
                 let fn = () => targetHref
@@ -165,14 +170,14 @@ export let rulesReplaceHtml: PpRule[] = [
                 fakeToStringAndValueOf(fn, 'valueOf')
                 return fn
               }
-              return t[k]
+              return location[k]
             },
             set: (t, k, v) => {
               if (k === 'href') {
                 location.href = ppify(v)
                 return
               }
-              t[k] = v
+              location[k] = v
             }
           })
           window.__fakedDocument = new Proxy(document, {
@@ -205,6 +210,7 @@ export let rulesReplaceHtml: PpRule[] = [
           let _window = new Proxy(window, {
             get: (t, k) => {
               // if (k === 'top') return _window // Error the proxy did not return its actual value
+              // if (k === 'self') return _window // Error the proxy did not return its actual value
               // if (k === 'parent') return _window // Error the proxy did not return its actual value
               // if (k === 'window') return _window // Error the proxy did not return its actual value
               if (k === 'location') return __fakedLocation
@@ -215,6 +221,7 @@ export let rulesReplaceHtml: PpRule[] = [
                   url = ppify(url)
                   return window.open(url, target, features)
                 }
+                fakeToStringAndValueOf(v, 'open')
               } else if (k === 'valueOf') {
                 v = () => _window
                 fakeToStringAndValueOf(v, 'valueOf')
@@ -238,7 +245,7 @@ export let rulesReplaceHtml: PpRule[] = [
           window.__fakedWindow = _window
           window.__originalWindow = window
 
-          {
+          {{
             ;['appendChild', 'insertBefore'].forEach(k => {
               let _fn = Node.prototype[k]
               Node.prototype[k] = function (newNode, ...rest) {
@@ -254,16 +261,15 @@ export let rulesReplaceHtml: PpRule[] = [
                 return _fn.call(this, newNode, ...rest)
               }
             })
-          }
-          
-          {
+          }}
+          {{
             let _open = XMLHttpRequest.prototype.open
             XMLHttpRequest.prototype.open = function (method, url) {
               url = ppify(url)
               return _open.call(this, method, url)
             }
-          }
-          {
+          }}
+          {{
             ;['pushState', 'replaceState'].forEach(k => {
               let _fn = history[k]
               history[k] = function (state, title, url) {
@@ -272,20 +278,20 @@ export let rulesReplaceHtml: PpRule[] = [
                 return _fn.call(this, state, title, nurl)
               }
             })
-          }
-          {
+          }}
+          {{
             let _submit = HTMLFormElement.prototype.submit
             HTMLFormElement.prototype.submit = function (...args) {
               this.action = ppify(this.action)
               return _submit.call(this, ...args)
             }
-          }
-          {
+          }}
+          {{
             // placed at the end
             let s = document.querySelector('#ppPreloadScript')
             s.parentNode.removeChild(s)
-          }
-          }`
+          }}
+          }}`
         )
         .prependTo($('head'))
 
