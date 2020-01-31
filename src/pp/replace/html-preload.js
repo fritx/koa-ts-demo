@@ -194,8 +194,10 @@
           tagAttrsArr.some(([tag, ...attrs]) => {
             if (newNode.tagName === tag.toUpperCase()) {
               attrs.forEach(attr => {
-                // or setAttribute?
-                newNode[attr] = ppify(newNode[attr])
+                if (newNode[attr]) {
+                  // or setAttribute?
+                  newNode[attr] = ppify(newNode[attr])
+                }
               })
               return true
             }

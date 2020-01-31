@@ -35,7 +35,9 @@ let handleProxy: Middleware = async ctx => {
     // could lead to like `https://vendor/blog.css`
     // due to probably chrome's bug
     if (!targetUrlPath) {
-      let newUrl = ctx.href.replace(/(\?)|$/, '/$1')
+      // let newUrl = ctx.href.replace(/([?&#])|$/, '/$1')
+      let newUrl = ctx.path.replace(/([?&#])|$/, '/$1')
+      // newUrl = parentPrefix + newUrl // too hard
       ctx.redirect(newUrl)
       return
     }

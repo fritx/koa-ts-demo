@@ -4,6 +4,7 @@ todo
 - selfHandle vs wxproxy res.end rewrite
 - cannot rewrite window.location location.replace & location.valueOf => dont use proxy
 - window functions bind & cache memo
+- new Image(), createElement img, src, currentSrc, srcSet...
 
 ```js
 document.cookie partition
