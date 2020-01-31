@@ -2,11 +2,15 @@ import { bufferStringReplace } from '../../lib/buffer'
 
 export let wrapScript = (str: string) => {
   // @experimental
-  // @fixme use let window=_window
-  str = str.replace(/window\.location/g, 'location')
+  // use let window=_window instead √
+  // str = str.replace(/window\.location/g, 'location')
   str = `
     with (__fakedWindow) {
-      ${str}
+      let window = __fakedWindow
+      let parent = __fakedWindow
+      let self = __fakedWindow
+      let top = __fakedWindow
+      ;${str}
     }
   `
   return str

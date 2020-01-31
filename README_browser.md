@@ -1,6 +1,6 @@
 todo
 
-- document.* deppify fe
+- document.\* deppify fe
 - selfHandle vs wxproxy res.end rewrite
 - cannot rewrite window.location location.replace & location.valueOf => dont use proxy
 - window functions bind & cache memo
@@ -16,14 +16,13 @@ this instanceof Window // √ be window, but can not be _window
 ```
 
 ```js
-window.location.replace('') // ×
-window.location.href = '' // ×
-window.location = '' // ×
+window.location.replace('') // √
+window.location.href = '' // √
+window.location = '' // √
 location.replace('') // √
 location.href = '' // √
 location = '' // √
 this === window // √ be window, but can not be _window
-
 ```
 
 ```js
