@@ -12,18 +12,14 @@ export let tagAttrsArr = [
   ['link', 'href'],
 ]
 
-export let wrapScript = (v: string | Buffer) => {
-  let isBuffer = Buffer.isBuffer(v)
-  v = isBuffer ? v.toString() : (v as string)
-
+export let wrapScript = (str: string) => {
   // @experimental
   // @fixme use let window=_window
-  v = v.replace(/window\.location/g, 'location')
-  v = `
+  str = str.replace(/window\.location/g, 'location')
+  str = `
     with (__fakedWindow) {
-      ${v}
+      ${str}
     }
   `
-  if (isBuffer) v = Buffer.from(v)
-  return v
+  return str
 }

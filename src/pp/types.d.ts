@@ -1,5 +1,5 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import { Context } from 'koa';
+import { IncomingMessage, ServerResponse } from 'http'
+import { Context } from 'koa'
 
 declare global {
   type PpEncodingMode = 'disable-accept' | 'try-unzip'

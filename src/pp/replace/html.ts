@@ -3,7 +3,9 @@ import * as libPath from 'path'
 import { cheerio } from '../../lib/cheerio'
 import { ppPrefix } from '../config'
 import { ppify } from '../url/ppify'
-import { safeInterpolate, tagAttrsArr, wrapScript } from './common'
+import { safeInterpolate, tagAttrsArr } from './common'
+import { replaceCssUrl } from './css'
+import { wrapScript } from './js'
 import template = require('lodash/template')
 
 let distDir = libPath.resolve(__dirname, '../../')
@@ -44,6 +46,18 @@ export let rulesReplaceHtml: PpRule[] = [
             $(el).attr(attr, ns)
           })
         })
+      })
+
+      $('style').each((i, el) => {
+        if (
+          $(el)
+            .html()
+            .trim()
+        ) {
+          let s = $(el).html()
+          s = replaceCssUrl(s, res._ppCtx)
+          $(el).text(s)
+        }
       })
 
       // cheerio script looks like

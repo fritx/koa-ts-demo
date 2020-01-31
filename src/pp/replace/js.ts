@@ -1,4 +1,16 @@
-import { wrapScript } from './common'
+import { bufferStringReplace } from '../../lib/buffer'
+
+export let wrapScript = (str: string) => {
+  // @experimental
+  // @fixme use let window=_window
+  str = str.replace(/window\.location/g, 'location')
+  str = `
+    with (__fakedWindow) {
+      ${str}
+    }
+  `
+  return str
+}
 
 export let rulesReplaceJs: PpRule[] = [
   {
@@ -8,9 +20,9 @@ export let rulesReplaceJs: PpRule[] = [
       )
     },
     transform: (req, res) => {
-      let s = res._ppBody
-      s = wrapScript(s)
-      res._ppBody = s
+      let buf = res._ppBody
+      buf = bufferStringReplace(buf, wrapScript)
+      res._ppBody = buf
     },
   },
 ]
