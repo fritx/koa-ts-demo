@@ -1,8 +1,9 @@
 import * as HttpProxy from 'http-proxy'
 import { Stream } from 'stream'
 import * as zlib from 'zlib'
-import { ppEncodingMode, ppRulesConfig } from './config'
+import { ppEncodingMode } from './config'
 import { setCookieRewrite } from './cookie'
+import { ppRulesConfig } from './rules'
 import { ppify } from './url/ppify'
 
 export let ppProxy = new HttpProxy({

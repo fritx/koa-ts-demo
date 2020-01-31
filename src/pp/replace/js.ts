@@ -1,4 +1,4 @@
-import { wrapScript } from './html'
+import { wrapScript } from './common'
 
 export let rulesReplaceJs: PpRule[] = [
   {
