@@ -14,7 +14,7 @@
       targetOrigin = 'https://' + targetOrigin
     }
   }
-  let targetDoamin = targetOrigin.replace(/^(https?:)?\/\//, '')
+  // let targetDoamin = targetOrigin.replace(/^(https?:)?\/\//, '')
   let targetPathname = ppPathname
     .replace(ppPrefix, '')
     .replace(targetOrigin, '')
@@ -22,11 +22,12 @@
   let targetHref = `${targetOrigin}${targetPath}`
 
   // @fixme sync with node
-  let deppify = url => {
+  let targetify = url => {
     // todo
   }
 
   let ppify = url => {
+    if (typeof url !== 'string') return url
     if (/^(https?:)?\/\//i.test(url)) {
       if (!url.startsWith(ppEntry)) {
         // @note baidu history pushState
@@ -123,10 +124,9 @@
       if (k === 'location') return __fakedLocation
       let v = t[k]
       // todo more document.*
-      if (['URL', 'baseURI', 'documentURI', 'domain', 'referrer'].includes(k))
-        return deppify(v)
-      // if (k === 'domain') return targetDoamin
-      // if (k === 'baseURI') return targetHref
+      if (['URL', 'baseURI', 'documentURI', 'domain', 'referrer'].includes(k)) {
+        return targetify(v)
+      }
 
       if (['write', 'writeln'].includes(k)) {
         v = function(markup) {

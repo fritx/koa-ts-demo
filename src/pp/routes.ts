@@ -2,7 +2,7 @@ import { Middleware } from 'koa'
 import * as libUrl from 'url'
 import { ppEncodingMode, ppPrefix } from './config'
 import { ppProxy } from './proxy'
-import { deppify } from './url/deppify'
+import { targetifyFit } from './url/targetify'
 
 let handleProxy: Middleware = async ctx => {
   let targetUrl = ''
@@ -54,8 +54,9 @@ let handleProxy: Middleware = async ctx => {
     ;['origin', 'referer'].forEach(k => {
       let _value = request.headers[k]
       if (_value) {
-        let urlProtocol = `${ctx.protocol}:` as UrlProtocol // completes with `:`
-        let targetValue = deppify(_value, urlProtocol)
+        // let urlProtocol = `${ctx.protocol}:` as UrlProtocol // completes with `:`
+        // let targetValue = targetifyFull(_value, urlProtocol)
+        let targetValue = targetifyFit(_value, targetUrl)
         request.headers[k] = targetValue
       }
     })

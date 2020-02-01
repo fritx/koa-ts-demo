@@ -1,5 +1,5 @@
-import { Context } from 'koa'
-import { ppPrefix } from '../config'
+import { Context } from 'koa';
+import { ppParentPrefix, ppPrefix } from '../config';
 
 // let urlDomainRegex = /((?:https?:)?\/\/)?([a-z0-9\-\.]+\.[a-z0-9\-\.]+)/i
 
@@ -35,7 +35,7 @@ export let ppify = (v: any, ppCtx: Context) => {
 
   // let originalPathname = ppCtx.originalUrl.replace(ppCtx.search, '')
   let ppPathname = ppCtx.originalUrl.replace(/\?.*/, '')
-  let ppEntry = `${ppCtx.origin}${ppPrefix}`
+  let ppEntry = `${ppCtx.origin}${ppParentPrefix}${ppPrefix}`
   // todo ^//
   if (/^https?:\/\//i.test(v)) {
     if (!v.startsWith(ppEntry)) {
