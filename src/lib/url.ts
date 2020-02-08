@@ -1,8 +1,10 @@
 import * as libUrl from 'url'
 
 export let safeUrlParse = (url: string, protocol?: UrlProtocol) => {
+  // let urlObj = libUrl.parse(url, false, true)
+  // urlObj.protocol = urlObj.protocol || protocol
   url = completeUrlFull(url, protocol)
-  let urlObj = libUrl.parse(url)
+  let urlObj = libUrl.parse(url, true, false)
   return urlObj
 }
 

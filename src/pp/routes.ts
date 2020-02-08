@@ -1,10 +1,34 @@
 import { Middleware } from 'koa'
 import * as libUrl from 'url'
-import { ppEncodingMode, ppPrefix } from './config'
+import { safeUrlParse } from '../lib/url'
+import { ppEncodingMode, ppParentPrefix, ppPrefix } from './config'
 import { ppProxy } from './proxy'
 import { targetifyFit } from './url/targetify'
+import cloneDeep = require('lodash/cloneDeep')
 
 let handleProxy: Middleware = async ctx => {
+  {
+    let { request } = ctx
+    let str = ctx.headers['x-forwarded-for-href'] || ctx.href
+    if (Array.isArray(str)) str = str.join(' ')
+    let arr = str && str.split(/\s+/)
+    let ppUrl = arr[arr.length - 1]
+    console.log('ppUrl', ppUrl)
+
+    let ppUrlObj = safeUrlParse(ppUrl)
+    if (!process.env.ALLOW_PROXY_LOCAL) {
+      if (!ppUrlObj.host || /^localhost|::1|[\d\.]+$/i.test(ppUrlObj.host)) {
+        throw new Error('not allowed to proxy local')
+      }
+    }
+    ctx.state.ppHeaders = cloneDeep(ctx.headers)
+    ctx.state.ppUrl = ppUrl
+    ctx.state.ppUrlObj = ppUrlObj
+
+    delete request.headers['x-forwarded-for']
+    delete request.headers['x-forwarded-for-href']
+  }
+
   let targetUrl = ''
   {
     let { url, protocol } = ctx

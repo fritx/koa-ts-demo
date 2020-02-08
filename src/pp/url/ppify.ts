@@ -1,11 +1,10 @@
-import { Context } from 'koa';
-import { ppParentPrefix, ppPrefix } from '../config';
+import { ppParentPrefix, ppPrefix } from '../config'
 
 // let urlDomainRegex = /((?:https?:)?\/\/)?([a-z0-9\-\.]+\.[a-z0-9\-\.]+)/i
 
 // todo keep sync with ppify in config.ts
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export let ppify = (v: any, ppCtx: Context) => {
+export let ppify = (v: any, ppCtx: PpCtx) => {
   if (typeof v !== 'string') return v
   let nv = v
   // let domainMatched = false
@@ -33,9 +32,14 @@ export let ppify = (v: any, ppCtx: Context) => {
   //   }
   // }
 
+  let { ppUrlObj } = ppCtx.state
+
   // let originalPathname = ppCtx.originalUrl.replace(ppCtx.search, '')
-  let ppPathname = ppCtx.originalUrl.replace(/\?.*/, '')
-  let ppEntry = `${ppCtx.origin}${ppParentPrefix}${ppPrefix}`
+  // let ppPathname = ppCtx.originalUrl.replace(/\?.*/, '')
+  // let ppEntry = `${ppCtx.origin}${ppParentPrefix}${ppPrefix}`
+  let ppOrigin = `${ppUrlObj.protocol}//${ppUrlObj.host}`
+  let ppEntry = `${ppOrigin}${ppParentPrefix}${ppPrefix}`
+  let ppPathname = ppUrlObj.pathname
   // todo ^//
   if (/^https?:\/\//i.test(v)) {
     if (!v.startsWith(ppEntry)) {

@@ -13,7 +13,7 @@ let testArr = [
 let targetUrlFull = 'https://baidu.com/a1/a2?q1=1&q2=2'
 
 testArr.forEach(([input, expected]) => {
-  test(`${input} => ${expected}`, t => {
+  test(`targetifyFit ${input} => ${expected}`, t => {
     let actual = targetifyFit(input, targetUrlFull)
     t.is(actual, expected)
   })

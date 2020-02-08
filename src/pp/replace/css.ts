@@ -1,8 +1,7 @@
-import { Context } from 'koa'
 import { bufferStringReplace } from '../../lib/buffer'
 import { ppify } from '../url/ppify'
 
-export let replaceCssUrl = (str: string, ctx: Context) => {
+export let replaceCssUrl = (str: string, ctx: PpCtx) => {
   return str.replace(/url\((.+?)\)/g, ($0, $1) => {
     return `url(${ppify($1, ctx)})`
   })

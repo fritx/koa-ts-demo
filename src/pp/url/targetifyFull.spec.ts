@@ -10,7 +10,7 @@ let prefixes = [
 ]
 
 prefixes.forEach(prefix => {
-  test(`${prefix}${ppPrefix}https://...`, t => {
+  test(`targetifyFull ${prefix}${ppPrefix}https://...`, t => {
     let actual = targetifyFull(
       `${prefix}${ppPrefix}https://baidu.com/a1/a2?q1=1&q2=2`
     )
@@ -18,7 +18,7 @@ prefixes.forEach(prefix => {
     t.is(actual, expected)
   })
 
-  test(`${prefix}${ppPrefix}http://...`, t => {
+  test(`targetifyFull ${prefix}${ppPrefix}http://...`, t => {
     let actual = targetifyFull(
       `${prefix}${ppPrefix}http://baidu.com/a1/a2?q1=1&q2=2`
     )
@@ -26,7 +26,7 @@ prefixes.forEach(prefix => {
     t.is(actual, expected)
   })
 
-  test(`${prefix}${ppPrefix}//... with protocol=(void)`, t => {
+  test(`targetifyFull ${prefix}${ppPrefix}//... with protocol=(void)`, t => {
     let actual = targetifyFull(
       `${prefix}${ppPrefix}//baidu.com/a1/a2?q1=1&q2=2`
     )
@@ -34,7 +34,7 @@ prefixes.forEach(prefix => {
     t.is(actual, expected)
   })
 
-  test(`${prefix}${ppPrefix}//... with protocol=https:`, t => {
+  test(`targetifyFull ${prefix}${ppPrefix}//... with protocol=https:`, t => {
     let actual = targetifyFull(
       `${prefix}${ppPrefix}//baidu.com/a1/a2?q1=1&q2=2`,
       'https:'
@@ -43,7 +43,7 @@ prefixes.forEach(prefix => {
     t.is(actual, expected)
   })
 
-  test(`${prefix}${ppPrefix}//... with protocol=http:`, t => {
+  test(`targetifyFull ${prefix}${ppPrefix}//... with protocol=http:`, t => {
     let actual = targetifyFull(
       `${prefix}${ppPrefix}//baidu.com/a1/a2?q1=1&q2=2`,
       'http:'
