@@ -51,7 +51,7 @@ let handleProxy: Middleware = async ctx => {
 
     let ppres = res as PpServerResponse
     ppres._ppCtx = ctx
-    ;['origin', 'referer'].forEach(k => {
+    ;['host', 'origin', 'referer'].forEach(k => {
       let _value = request.headers[k]
       if (_value) {
         // let urlProtocol = `${ctx.protocol}:` as UrlProtocol // completes with `:`

@@ -113,9 +113,11 @@
       set: (t, k, v) => {
         if (k === 'href') {
           location.href = ppify(v)
-          return
+          return true
         }
         location[k] = v
+        // Uncaught TypeError: 'set' on proxy: trap returned falsish for property 'g_history'
+        return true
       },
     }
   )
@@ -145,6 +147,8 @@
     },
     set: (t, k, v) => {
       t[k] = v
+      // Uncaught TypeError: 'set' on proxy: trap returned falsish for property 'g_history'
+      return true
     },
   })
   let _window = new Proxy(window, {
@@ -178,9 +182,11 @@
     set: (t, k, v) => {
       if (k === 'location') {
         location.href = ppify(v)
-        return
+        return true
       }
       t[k] = v
+      // Uncaught TypeError: 'set' on proxy: trap returned falsish for property 'g_history'
+      return true
     },
   })
   window.__fakedWindow = _window
