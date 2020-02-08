@@ -171,9 +171,12 @@
         fakeToStringAndValueOf(v, 'valueOf')
       } else if (typeof v === 'function') {
         if (v.toString().includes('{ [native code] }')) {
-          if (!v.prototype) {
+          // Uncaught TypeError: __fakedWindow.Proxy.revocable is not a function
+          if (!v.prototype && [Proxy].includes(v)) {
             // avoid Window, Object
-            v = v.bind(window)
+            let ov = v
+            v = ov.bind(window)
+            for (let k in ov) v[k] = ov[k]
           }
         }
       }
