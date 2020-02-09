@@ -171,8 +171,11 @@
         fakeToStringAndValueOf(v, 'valueOf')
       } else if (typeof v === 'function') {
         if (v.toString().includes('{ [native code] }')) {
+          // if (!v.prototype) {
+          //   v = v.bind(window)
+          // }
           // Uncaught TypeError: __fakedWindow.Proxy.revocable is not a function
-          if (!v.prototype && [Proxy].includes(v)) {
+          if (!v.prototype && ![Proxy].includes(v)) {
             // avoid Window, Object
             let ov = v
             v = ov.bind(window)

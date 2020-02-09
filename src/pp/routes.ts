@@ -74,7 +74,7 @@ let handleProxy: Middleware = async ctx => {
     request.url = targetUrlPath
 
     let ppres = res as PpServerResponse
-    ppres._ppCtx = ctx
+    ppres._ppCtx = ctx as PpCtx
     ;['host', 'origin', 'referer'].forEach(k => {
       let _value = request.headers[k]
       if (_value) {
