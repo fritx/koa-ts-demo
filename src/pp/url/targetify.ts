@@ -19,7 +19,7 @@ export let targetifyFull = (v: any, protocol?: UrlProtocol) => {
   // return `${s0}${target.origin}${target.path}`
 }
 
-// todo
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export let targetifyFit = (v: any, targetUrlFull: string) => {
   if (typeof v !== 'string') return v
   let urlObj = safeUrlParse(v)

@@ -7,40 +7,11 @@ import { ppParentPrefix, ppPrefix } from '../config'
 export let ppify = (v: any, ppCtx: PpCtx) => {
   if (typeof v !== 'string') return v
   let nv = v
-  // let domainMatched = false
-  // nv = v.replace(urlDomainRegex, ($0, $1, $2) => {
-  //   domainMatched = true
-  //   let prefix = ''
-  //   if ($1) {
-  //     // `https?://` or `//`
-  //     if (/^https?:\/\//i.test($1)) {
-  //       prefix = ppCtx.origin
-  //     } else if ($1.startsWith('//')) {
-  //       prefix = ppCtx.origin.replace(/^https?:/, '')
-  //     }
-  //   } else {
-  //     prefix = ppCtx.host
-  //   }
-  //   if (prefix) return `${prefix}${ppPrefix}${$2}`
-  //   return $0
-  // })
-  // if (!domainMatched) {
-  //   // let originalPathname = ppCtx.originalUrl.replace(ppCtx.search, '')
-  //   let originalPathname = ppCtx.originalUrl.replace(/\?.*/, '')
-  //   if (/^\/([^/]|$)/.test(v)) {
-  //     nv = `${originalPathname.replace(/\/+$/, '')}${v}`
-  //   }
-  // }
-
   let { ppUrlObj } = ppCtx.state
+  let { origin } = ppCtx
 
-  // let originalPathname = ppCtx.originalUrl.replace(ppCtx.search, '')
-  // let ppPathname = ppCtx.originalUrl.replace(/\?.*/, '')
-  // let ppEntry = `${ppCtx.origin}${ppParentPrefix}${ppPrefix}`
   let ppOrigin = `${ppUrlObj.protocol}//${ppUrlObj.host}`
   let ppEntry = `${ppOrigin}${ppParentPrefix}${ppPrefix}`
-  let ppPathname = ppUrlObj.pathname
-  // todo ^//
   if (/^https?:\/\//i.test(v)) {
     if (!v.startsWith(ppEntry)) {
       nv = `${ppEntry}${v}`
@@ -48,15 +19,12 @@ export let ppify = (v: any, ppCtx: PpCtx) => {
   } else if (v.startsWith('//')) {
     let _entry = ppEntry.replace(/^https?:/, '')
     if (!v.startsWith(_entry)) {
-      // nv = `${_entry}${v.replace(/^\/\//, '')}`
       nv = `${_entry}${v}` // keep original ^//
     }
   } else if (v.startsWith('/')) {
-    let _path =
-      ppPrefix +
-      ppPathname.replace(ppPrefix, '').match(/^(?:(?:https?:)?\/\/)?.+?\//)[0]
+    let _path = `${ppParentPrefix}${ppPrefix}`
     if (!v.startsWith(_path)) {
-      nv = `${_path.replace(/\/+$/, '')}${v}`
+      nv = `${_path}${origin}${v}`
     }
   }
   return nv
