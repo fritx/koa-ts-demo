@@ -31,7 +31,7 @@ if (process.env.NODE_ENV === 'production') {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       db: redis as any, // fixme
       disableHeader: false,
-      duration: 1000 * 10,
+      duration: 1000 * 5,
       errorMessage: 'Sometimes You Just Have to Slow Down.',
       headers: {
         remaining: 'Rate-Limit-Remaining',
@@ -39,7 +39,7 @@ if (process.env.NODE_ENV === 'production') {
         total: 'Rate-Limit-Total',
       },
       id: ctx => ctx.ip,
-      max: 20,
+      max: 200,
     })
   )
 }

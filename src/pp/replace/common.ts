@@ -5,10 +5,12 @@ export let tagAttrsArr = [
   ['area', 'href'],
   ['base', 'href'],
   ['form', 'action'],
-  ['img', 'src'],
+  // https://www.jianshu.com/p/8c6c47f0eac6 data-original-src
+  // ['img', 'src', 'data-src', 'data-original-src'],
+  ['img', 'src', 'data-src'],
   ['frame', 'src'],
   ['iframe', 'src'],
-  ['script', 'src'],
+  ['script', 'src', 'data-src'],
   ['link', 'href'],
 ]
 

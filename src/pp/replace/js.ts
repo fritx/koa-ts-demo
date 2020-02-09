@@ -4,7 +4,8 @@ export let wrapScript = (str: string) => {
   // @experimental
   // use let window=_window instead √
   // str = str.replace(/window\.location/g, 'location')
-  str = `
+  if (str) {
+    str = `
     with (__fakedWindow) {
       let window = __fakedWindow
       let parent = __fakedWindow
@@ -13,6 +14,17 @@ export let wrapScript = (str: string) => {
       ;${str}
     }
   `
+  }
+  return str
+}
+export let ppifyScript = wrapScript
+
+// against ppifyScript
+export let targetifyScript = (str: string) => {
+  if (str) {
+    let mat = str.match(/__fakedWindow\s*;([\s\S]*)\s*\}\s*/)
+    if (mat) str = mat[1]
+  }
   return str
 }
 

@@ -61,7 +61,7 @@ let handleProxy: Middleware = async ctx => {
     if (!targetUrlPath) {
       // let newUrl = ctx.href.replace(/([?&#])|$/, '/$1')
       let newUrl = ctx.path.replace(/([?&#])|$/, '/$1')
-      // newUrl = parentPrefix + newUrl // too hard
+      if (ppParentPrefix) newUrl = `${ppParentPrefix}${newUrl}` // too hard
       ctx.redirect(newUrl)
       return
     }
@@ -75,7 +75,7 @@ let handleProxy: Middleware = async ctx => {
 
     let ppres = res as PpServerResponse
     ppres._ppCtx = ctx as PpCtx
-    ;['host', 'origin', 'referer'].forEach(k => {
+    ;['host', 'origin', 'referer', 'referrer'].forEach(k => {
       let _value = request.headers[k]
       if (_value) {
         // let urlProtocol = `${ctx.protocol}:` as UrlProtocol // completes with `:`

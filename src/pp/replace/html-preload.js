@@ -7,6 +7,9 @@
   let targetOrigin = ppPathname
     .replace(ppPrefix, '')
     .match(/^(?:(?:https?:)?\/\/)?[^/]+/)[0]
+  let [targetProtocol, targetHost] = targetOrigin.split('//')
+  let [targetHostname, targetPort] = targetHost.split(':')
+  targetPort = targetPort || (targetProtocol === 'https:' ? '443' : '80')
   if (!/^https?:\/\//i.test(targetOrigin)) {
     if (targetOrigin.startsWith('//')) {
       targetOrigin = 'https:' + targetOrigin
@@ -22,8 +25,13 @@
   let targetHref = `${targetOrigin}${targetPath}`
 
   // @fixme sync with node
-  let targetify = url => {
+  let targetifyFit = url => {
     // todo
+    return url
+  }
+  let targetifyFull = url => {
+    // todo
+    return url
   }
 
   let ppify = url => {
@@ -86,6 +94,15 @@
     {
       get: (t, k) => {
         // todo more location.*
+        // todo hostname port pathname search hash
+        // todo targetifyFit
+        // if (['href', 'host', 'origin'].includes(k)) {
+        //   return targetifyFit(v)
+        // }
+        if (k === 'protocol') return targetProtocol
+        if (k === 'host') return targetHost
+        if (k === 'hostname') return targetHostname
+        if (k === 'port') return targetPort
         if (k === 'href') return targetHref
         if (k === 'replace') {
           // Error the proxy did not return its actual value
@@ -111,6 +128,8 @@
         return location[k]
       },
       set: (t, k, v) => {
+        // todo more location.*
+        // todo protocol hostname port pathname search hash
         if (k === 'href') {
           location.href = ppify(v)
           return true
@@ -127,7 +146,7 @@
       let v = t[k]
       // todo more document.*
       if (['URL', 'baseURI', 'documentURI', 'domain', 'referrer'].includes(k)) {
-        return targetify(v)
+        return targetifyFit(v)
       }
 
       if (['write', 'writeln'].includes(k)) {
@@ -198,62 +217,96 @@
   window.__fakedWindow = _window
   window.__originalWindow = window
 
+  // https://www.jianshu.com/p/8c6c47f0eac6 imgs
   {
-    {
-      ;['appendChild', 'insertBefore'].forEach(k => {
-        let _fn = Node.prototype[k]
-        Node.prototype[k] = function(newNode, ...rest) {
-          tagAttrsArr.some(([tag, ...attrs]) => {
-            if (newNode.tagName === tag.toUpperCase()) {
-              attrs.forEach(attr => {
-                if (newNode[attr]) {
-                  // or setAttribute?
-                  newNode[attr] = ppify(newNode[attr])
-                }
-              })
-              return true
-            }
-          })
-          return _fn.call(this, newNode, ...rest)
-        }
+    let _setAttribute = Element.prototype.setAttribute
+    Element.prototype.setAttribute = function(k, v) {
+      let pv = ppify(v)
+      console.log('setAttr', k, v, pv)
+      return _setAttribute.call(this, k, pv)
+    }
+    let _getAttribute = Element.prototype.getAttribute
+    Element.prototype.getAttribute = function(k) {
+      let v = _getAttribute.call(this, k)
+      return targetifyFit(v)
+    }
+
+    let _createElement = document.createElement
+    document.createElement = (...args) => {
+      console.log('createElement', args)
+      let el = _createElement.call(document, ...args)
+      // todo try Proxy instead
+      Object.defineProperty(el, 'src', {
+        get() {
+          let src = this.getAttribute('src')
+          return targetifyFull(src)
+        },
+        set(v) {
+          this.setAttribute('src', v)
+          return true
+        },
       })
+      return el
     }
   }
+  // https://www.jianshu.com/p/8c6c47f0eac6 JSON.parse
   {
-    {
-      let _open = XMLHttpRequest.prototype.open
-      XMLHttpRequest.prototype.open = function(method, url) {
-        url = ppify(url)
-        return _open.call(this, method, url)
+    let _parse = JSON.parse
+    JSON.parse = str => {
+      // same as targetifyScript
+      if (str) {
+        let mat = str.match(/__fakedWindow\s*;([\s\S]*)\s*\}\s*/)
+        if (mat) str = mat[1]
       }
+      return _parse(str)
     }
   }
   {
-    {
-      ;['pushState', 'replaceState'].forEach(k => {
-        let _fn = history[k]
-        history[k] = function(state, title, url) {
-          let nurl = ppify(url)
-          console.log(['history', k, url, nurl])
-          return _fn.call(this, state, title, nurl)
-        }
-      })
-    }
-  }
-  {
-    {
-      let _submit = HTMLFormElement.prototype.submit
-      HTMLFormElement.prototype.submit = function(...args) {
-        this.action = ppify(this.action)
-        return _submit.call(this, ...args)
+    ;['appendChild', 'insertBefore'].forEach(k => {
+      let _fn = Node.prototype[k]
+      Node.prototype[k] = function(newNode, ...rest) {
+        tagAttrsArr.some(([tag, ...attrs]) => {
+          if (newNode.tagName === tag.toUpperCase()) {
+            attrs.forEach(attr => {
+              if (newNode[attr]) {
+                // or setAttribute?
+                newNode[attr] = ppify(newNode[attr])
+              }
+            })
+            return true
+          }
+        })
+        return _fn.call(this, newNode, ...rest)
       }
+    })
+  }
+  {
+    let _open = XMLHttpRequest.prototype.open
+    XMLHttpRequest.prototype.open = function(method, url) {
+      url = ppify(url)
+      return _open.call(this, method, url)
     }
   }
   {
-    {
-      // placed at the end
-      let s = document.querySelector('#ppPreloadScript')
-      s.parentNode.removeChild(s)
+    ;['pushState', 'replaceState'].forEach(k => {
+      let _fn = history[k]
+      history[k] = function(state, title, url) {
+        let nurl = ppify(url)
+        console.log(['history', k, url, nurl])
+        return _fn.call(this, state, title, nurl)
+      }
+    })
+  }
+  {
+    let _submit = HTMLFormElement.prototype.submit
+    HTMLFormElement.prototype.submit = function(...args) {
+      this.action = ppify(this.action)
+      return _submit.call(this, ...args)
     }
+  }
+  {
+    // placed at the end
+    let s = document.querySelector('#ppPreloadScript')
+    s.parentNode.removeChild(s)
   }
 }
