@@ -12,6 +12,7 @@
 - baidu https://github.com/ecomfe/esl/blob/master/src/esl.js
 - n0gx reverse proxy
 - host white/blacklist localhost ::1 127.0.0.1 0.0.0.0
+- websocket/wss proxy github.com
 
 ### Changelog
 

@@ -1,9 +1,9 @@
 import { Middleware } from 'koa'
-import * as libUrl from 'url'
+import { resolve as urlResolve, UrlWithParsedQuery } from 'url'
 import { safeUrlParse } from '../lib/url'
 import { ppEncodingMode, ppParentPrefix, ppPrefix } from './config'
 import { ppProxy } from './proxy'
-import { targetifyFit } from './url/targetify'
+import { targetifyFit, targetifyFull } from './url/targetify'
 import cloneDeep = require('lodash/cloneDeep')
 
 let handleProxy: Middleware = async ctx => {
@@ -30,11 +30,39 @@ let handleProxy: Middleware = async ctx => {
   }
 
   let targetUrl = ''
+  let targetUrlObj: UrlWithParsedQuery
   {
     let { url, protocol } = ctx
+
+    if (['/favicon.ico'].includes(url)) {
+      // todo favicon
+      ctx.status = 404
+      return
+    }
+
+    if (!url.startsWith(ppPrefix)) {
+      let referer = ctx.headers['referer'] || ctx.headers['referrer']
+      if (referer) {
+        let refererTargetUrl = targetifyFull(referer)
+        let newTargetUrl = urlResolve(refererTargetUrl, url)
+        let newUrl = `${ppPrefix}${newTargetUrl}`
+        console.log('no prefix & no referer redirect', newUrl)
+        ctx.redirect(newUrl)
+      } else {
+        console.log('no prefix & no referer 400', ctx.headers)
+        ctx.status = 400
+      }
+      return
+    }
+
     // let targetUrlEnc = url.substr(ppPrefix.length)
     // targetUrl = decodeURIComponent(targetUrlEnc)
     targetUrl = url.substr(ppPrefix.length)
+
+    // https:/github.githubassets.com/assets/frameworks-1c3d89d5.js.map
+    if (/^https?:\/[^/]/i.test(targetUrl)) {
+      targetUrl = targetUrl.replace(/:\//, '://')
+    }
 
     if (!/^https?:\/\//i.test(targetUrl)) {
       let prefix = ''
@@ -45,16 +73,22 @@ let handleProxy: Middleware = async ctx => {
       }
       targetUrl = `${prefix}${targetUrl}`
     }
+
+    targetUrlObj = safeUrlParse(targetUrl)
   }
 
   {
     let { req, res, request } = ctx
-    let { protocol, host } = libUrl.parse(targetUrl)
+    let { protocol, host, path } = targetUrlObj
     let validOrigin = protocol && host
     if (!validOrigin) return
 
     let targetOrigin = `${protocol}//${host}`
-    let targetUrlPath = targetUrl.substr(targetOrigin.length)
+    let targetUrlPath = path
+
+    ctx.state.targetOrigin = targetOrigin
+    ctx.state.targetUrl = targetUrl
+    ctx.state.targetUrlObj = targetUrlObj
 
     // could lead to like `https://vendor/blog.css`
     // due to probably chrome's bug

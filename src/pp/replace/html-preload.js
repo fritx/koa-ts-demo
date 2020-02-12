@@ -7,9 +7,6 @@
   let targetOrigin = ppPathname
     .replace(ppPrefix, '')
     .match(/^(?:(?:https?:)?\/\/)?[^/]+/)[0]
-  let [targetProtocol, targetHost] = targetOrigin.split('//')
-  let [targetHostname, targetPort] = targetHost.split(':')
-  targetPort = targetPort || (targetProtocol === 'https:' ? '443' : '80')
   if (!/^https?:\/\//i.test(targetOrigin)) {
     if (targetOrigin.startsWith('//')) {
       targetOrigin = 'https:' + targetOrigin
@@ -17,6 +14,9 @@
       targetOrigin = 'https://' + targetOrigin
     }
   }
+  let [targetProtocol, targetHost] = targetOrigin.split('//')
+  let [targetHostname, targetPort] = targetHost.split(':')
+  targetPort = targetPort || (targetProtocol === 'https:' ? '443' : '80')
   // let targetDoamin = targetOrigin.replace(/^(https?:)?\/\//, '')
   let targetPathname = ppPathname
     .replace(ppPrefix, '')

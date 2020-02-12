@@ -10,6 +10,9 @@ declare global {
       ppHeaders: Headers
       ppUrl: string
       ppUrlObj: UrlWithParsedQuery
+      targetOrigin: string
+      targetUrl: string
+      targetUrlObj: UrlWithParsedQuery
     },
     {}
   >

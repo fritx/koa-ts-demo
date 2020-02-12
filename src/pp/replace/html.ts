@@ -51,6 +51,10 @@ export let rulesReplaceHtml: PpRule[] = [
           })
         })
 
+        $('link, script').each((i, el) => {
+          $(el).removeAttr('integrity')
+        })
+
         $('style').each((i, el) => {
           if (
             $(el)

@@ -43,6 +43,9 @@ ppProxy.on('proxyRes', (proxyRes, req, res) => {
     if (k === 'location') v = ppify(v, ppres._ppCtx)
     if (k === 'access-control-allow-origin') v = ppres._ppCtx.origin
     if (k === 'set-cookie') v = setCookieRewrite(v, ppres._ppCtx)
+
+    if (k === 'content-security-policy') v = '' // github.com
+    // if (k === 'referrer-policy') v = '' // github.com
     res.setHeader(k, v)
   })
 
