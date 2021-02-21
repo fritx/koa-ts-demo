@@ -7,7 +7,8 @@ import { ppParentPrefix, ppPrefix } from '../config'
 export let ppify = (v: any, ppCtx: PpCtx) => {
   if (typeof v !== 'string') return v
   let nv = v
-  let { ppUrlObj, targetOrigin } = ppCtx.state
+  let targetOrigin = ppCtx.origin
+  let { ppUrlObj } = ppCtx.state
 
   let ppOrigin = `${ppUrlObj.protocol}//${ppUrlObj.host}`
   let ppEntry = `${ppOrigin}${ppParentPrefix}${ppPrefix}`

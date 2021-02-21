@@ -49,8 +49,10 @@
         }
       }
     } else if (url.startsWith('/')) {
-      if (!url.startsWith(ppPathname)) {
-        return url.replace(/^\//, ppPathname)
+      // if (!url.startsWith(ppPathname)) {
+      // return url.replace(/^\//, ppPathname)
+      if (!url.startsWith(ppPrefix)) {
+        return `${ppPrefix}${targetOrigin}${url}`
       }
     }
     return url
@@ -103,6 +105,8 @@
         if (k === 'host') return targetHost
         if (k === 'hostname') return targetHostname
         if (k === 'port') return targetPort
+        if (k === 'origin') return targetOrigin
+        if (k === 'pathname') return targetPathname
         if (k === 'href') return targetHref
         if (k === 'replace') {
           // Error the proxy did not return its actual value
@@ -121,7 +125,7 @@
         }
         if (k === 'valueOf') {
           // Error the proxy did not return its actual value
-          let fn = () => this
+          let fn = () => __fakedLocation
           fakeToStringAndValueOf(fn, 'valueOf')
           return fn
         }
@@ -156,8 +160,8 @@
         }
       } else if (typeof v === 'function') {
         if (v.toString().includes('{ [native code] }')) {
-          if (!v.prototype) {
-            // avoid Window, Object
+          if (!/^[A-Z]/.test(k)) {
+            // avoid Class
             v = v.bind(document)
           }
         }
@@ -178,6 +182,7 @@
       // if (k === 'window') return _window // Error the proxy did not return its actual value
       if (k === 'location') return __fakedLocation
       if (k === 'document') return __fakedDocument
+      if (k === 'MutationObserver') return __fakedMutationObserver
       let v = t[k]
       if (k === 'open') {
         v = (url, target, features) => {
@@ -190,12 +195,13 @@
         fakeToStringAndValueOf(v, 'valueOf')
       } else if (typeof v === 'function') {
         if (v.toString().includes('{ [native code] }')) {
-          // if (!v.prototype) {
-          //   v = v.bind(window)
-          // }
+          // 判断prototype.constructor是因为 小红书遇到了document/window.addEventListener
+          // 居然有prototype 可能是他们某些polyfill导致
+          // https://www.xiaohongshu.com/discovery/item/602fa7980000000001025208
           // Uncaught TypeError: __fakedWindow.Proxy.revocable is not a function
-          if (!v.prototype && ![Proxy].includes(v)) {
-            // avoid Window, Object
+          // if (!v.prototype && ![Proxy].includes(v)) {
+          if (!/^[A-Z]/.test(k)) {
+            // avoid Class like Window, Object, Proxy
             let ov = v
             v = ov.bind(window)
             for (let k in ov) v[k] = ov[k]
@@ -217,6 +223,15 @@
   window.__fakedWindow = _window
   window.__originalWindow = window
 
+  window.__fakedMutationObserver = function(...args) {
+    const observer = new MutationObserver(...args)
+    const original = observer.observe
+    observer.observe = function(t, ...rest) {
+      if (t === __fakedDocument) t = document
+      return original.call(this, t, ...rest)
+    }
+    return observer
+  }
   // https://www.jianshu.com/p/8c6c47f0eac6 imgs
   {
     let _setAttribute = Element.prototype.setAttribute

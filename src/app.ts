@@ -28,8 +28,8 @@ app.on('error', (err, ctx) => {
 if (process.env.NODE_ENV === 'production') {
   app.use(
     ratelimit({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      db: redis as any, // fixme
+      driver: 'redis',
+      db: redis,
       disableHeader: false,
       duration: 1000 * 5,
       errorMessage: 'Sometimes You Just Have to Slow Down.',
