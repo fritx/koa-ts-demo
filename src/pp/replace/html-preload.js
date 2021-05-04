@@ -79,6 +79,27 @@
     fn.valueOf.toString = () => 'function valueOf() { [native code] }'
   }
 
+  let __REAL__ = '__REAL__'
+  let ensureReal = o => o && o[__REAL__] ? o[__REAL__] : o
+
+  Object.keys(Node.prototype).forEach(k => {
+    try {
+      // nodeType -- Uncaught TypeError: Illegal invocation
+      if (typeof Node.prototype[k] === 'function') {
+        let originalFn = Node.prototype[k]
+        let faked = {
+          [k]: function (...args) {
+            return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+          }
+        }
+        fakeToStringAndValueOf(faked[k], k)
+        Node.prototype[k] = faked[k]
+      }
+    } catch (err) {
+      // ignore
+    }
+  })
+
   // todo wrap & bind
   // ;['setTimeout', 'setInterval'].forEach(k => {
   //   let origFn = window[`__original_${k}`] = window[k]
@@ -238,11 +259,11 @@
     Element.prototype.setAttribute = function(k, v) {
       let pv = ppify(v)
       console.log('setAttr', k, v, pv)
-      return _setAttribute.call(this, k, pv)
+      return _setAttribute.call(ensureReal(this), k, pv)
     }
     let _getAttribute = Element.prototype.getAttribute
     Element.prototype.getAttribute = function(k) {
-      let v = _getAttribute.call(this, k)
+      let v = _getAttribute.call(ensureReal(this), k)
       return targetifyFit(v)
     }
 
@@ -251,17 +272,41 @@
       console.log('createElement', args)
       let el = _createElement.call(document, ...args)
       // todo try Proxy instead
-      Object.defineProperty(el, 'src', {
-        get() {
-          let src = this.getAttribute('src')
-          return targetifyFull(src)
+      // Object.defineProperty(el, 'src', {
+      //   get() {
+      //     let src = this.getAttribute('src')
+      //     return targetifyFull(src)
+      //   },
+      //   set(v) {
+      //     this.setAttribute('src', v)
+      //     return true
+      //   },
+      // })
+      // return el
+      let proxy = new Proxy(el, {
+        get(t, k) {
+          if (k === __REAL__) return el
+          if (k === 'src') {
+            let src = t.getAttribute('src')
+            return targetifyFull(src)
+          }
+          if (typeof t[k] === 'function') {
+            let newk = `__${k}_proxy__`
+            if (!t[newk]) t[newk] = t[k].bind(ensureReal(t))
+            return t[newk]
+          }
+          return t[k]
         },
-        set(v) {
-          this.setAttribute('src', v)
+        set(t, k, v) {
+          if (k === 'src') {
+            t.setAttribute('src', v)
+          } else {
+            t[k] = v
+          }
           return true
-        },
+        }
       })
-      return el
+      return proxy
     }
   }
   // https://www.jianshu.com/p/8c6c47f0eac6 JSON.parse
@@ -291,6 +336,7 @@
             return true
           }
         })
+        // return _fn.call(this, ensureReal(newNode), ...rest)
         return _fn.call(this, newNode, ...rest)
       }
     })
@@ -322,6 +368,6 @@
   {
     // placed at the end
     let s = document.querySelector('#ppPreloadScript')
-    s.parentNode.removeChild(s)
+    if (s) s.parentNode.removeChild(s)
   }
 }
