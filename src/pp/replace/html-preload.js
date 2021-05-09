@@ -82,22 +82,47 @@
   let __REAL__ = '__REAL__'
   let ensureReal = o => o && o[__REAL__] ? o[__REAL__] : o
 
-  Object.keys(Node.prototype).forEach(k => {
-    try {
-      // nodeType -- Uncaught TypeError: Illegal invocation
-      if (typeof Node.prototype[k] === 'function') {
-        let originalFn = Node.prototype[k]
-        let faked = {
-          [k]: function (...args) {
-            return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+  // 覆盖 EventTarget.add/removeEventListener 以及 *Observer.observe
+  // EventTarget > WindowProperties > Window
+  // EventTarget > Node > Element > HTMLElement
+  // EventTarget > Node > Document > HTMLDocument
+  ;[EventTarget, Node, MutationObserver, ResizeObserver].forEach(cls => {
+    Object.keys(cls.prototype).forEach(k => {
+      try {
+        // nodeType -- Uncaught TypeError: Illegal invocation
+        if (typeof cls.prototype[k] === 'function') {
+          let originalFn = cls.prototype[k]
+          let faked = {
+            [k]: function (...args) {
+              return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+            }
           }
+          fakeToStringAndValueOf(faked[k], k)
+          cls.prototype[k] = faked[k]
         }
-        fakeToStringAndValueOf(faked[k], k)
-        Node.prototype[k] = faked[k]
+      } catch (err) {
+        // ignore
       }
-    } catch (err) {
-      // ignore
-    }
+    })
+  })
+  ;[window].forEach(obj => {
+    Object.keys(obj).forEach(k => {
+      try {
+        // nodeType -- Uncaught TypeError: Illegal invocation
+        if (typeof obj[k] === 'function') {
+          let originalFn = obj[k]
+          let faked = {
+            [k]: function (...args) {
+              return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+            }
+          }
+          fakeToStringAndValueOf(faked[k], k)
+          obj[k] = faked[k]
+        }
+      } catch (err) {
+        // ignore
+      }
+    })
   })
 
   // todo wrap & bind
@@ -111,11 +136,11 @@
   //   }
   // })
 
-  // window.__fakedLocation = new Proxy(location, {
-  window.__fakedLocation = new Proxy(
-    {},
+  // window.__fakedLocation = new Proxy(location,
+  window.__fakedLocation = new Proxy({},
     {
       get: (t, k) => {
+        if (k === __REAL__) return location
         // todo more location.*
         // todo hostname port pathname search hash
         // todo targetifyFit
@@ -129,6 +154,13 @@
         if (k === 'origin') return targetOrigin
         if (k === 'pathname') return targetPathname
         if (k === 'href') return targetHref
+        if (k === 'reload') {
+          let fn = () => {
+            return location.reload()
+          }
+          fakeToStringAndValueOf(fn, 'reload')
+          return fn
+        }
         if (k === 'replace') {
           // Error the proxy did not return its actual value
           let fn = url => {
@@ -167,6 +199,7 @@
   )
   window.__fakedDocument = new Proxy(document, {
     get: (t, k) => {
+      if (k === __REAL__) return document
       if (k === 'location') return __fakedLocation
       let v = t[k]
       // todo more document.*
@@ -197,13 +230,14 @@
   })
   let _window = new Proxy(window, {
     get: (t, k) => {
+      if (k === __REAL__) return window
       // if (k === 'top') return _window // Error the proxy did not return its actual value
       // if (k === 'self') return _window // Error the proxy did not return its actual value
       // if (k === 'parent') return _window // Error the proxy did not return its actual value
       // if (k === 'window') return _window // Error the proxy did not return its actual value
       if (k === 'location') return __fakedLocation
       if (k === 'document') return __fakedDocument
-      if (k === 'MutationObserver') return __fakedMutationObserver
+      // if (k === 'MutationObserver') return __fakedMutationObserver
       let v = t[k]
       if (k === 'open') {
         v = (url, target, features) => {
@@ -227,6 +261,8 @@
             v = ov.bind(window)
             for (let k in ov) v[k] = ov[k]
           }
+          // FIXME: 没有保证每次调用的一致性
+          // TODO: 统一解决
         }
       }
       return v
@@ -242,17 +278,8 @@
     },
   })
   window.__fakedWindow = _window
-  window.__originalWindow = window
+  // window.__originalWindow = window
 
-  window.__fakedMutationObserver = function(...args) {
-    const observer = new MutationObserver(...args)
-    const original = observer.observe
-    observer.observe = function(t, ...rest) {
-      if (t === __fakedDocument) t = document
-      return original.call(this, t, ...rest)
-    }
-    return observer
-  }
   // https://www.jianshu.com/p/8c6c47f0eac6 imgs
   {
     let _setAttribute = Element.prototype.setAttribute
