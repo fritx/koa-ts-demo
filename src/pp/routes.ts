@@ -16,11 +16,6 @@ let handleProxy: Middleware = async ctx => {
     console.log('ppUrl', ppUrl)
 
     let ppUrlObj = safeUrlParse(ppUrl)
-    if (!process.env.ALLOW_PROXY_LOCAL) {
-      if (!ppUrlObj.host || /^localhost|::1|[\d\.]+$/i.test(ppUrlObj.host)) {
-        throw new Error('not allowed to proxy local')
-      }
-    }
     ctx.state.ppHeaders = cloneDeep(ctx.headers)
     ctx.state.ppUrl = ppUrl
     ctx.state.ppUrlObj = ppUrlObj
@@ -75,6 +70,12 @@ let handleProxy: Middleware = async ctx => {
     }
 
     targetUrlObj = safeUrlParse(targetUrl)
+
+    if (process.env.ALLOW_PROXY_LOCAL !== 'true') {
+      if (!targetUrlObj.hostname || /^(localhost|::1|127\.[\d\.]+)$/i.test(targetUrlObj.hostname)) {
+        throw new Error('not allowed to proxy local')
+      }
+    }
   }
 
   {
