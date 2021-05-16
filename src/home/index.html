@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <head>
+    <title>请复制/粘贴网址，点击确定前往</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      form {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      textarea {
+        display: block;
+        box-sizing: border-box;
+        flex: 1;
+        width: 100%;
+        padding: 0.6rem;
+        font-size: 1.5rem;
+      }
+      button {
+        font-size: 1.3rem;
+        padding: 0.4rem;
+      }
+    </style>
+  </head>
+  <body>
+    <form id="urlForm">
+      <textarea id="urlEditor" placeholder="请复制/粘贴网址，点击确定前往"></textarea>
+      <button type="submit">确定前往</button>
+    </form>
+    <script>
+      let { ppFullPrefix } = '%%{{data}}'
+
+      window.urlForm.addEventListener('submit', handleSubmit)
+      window.urlForm.addEventListener('keydown', e => {
+        if (e.keyCode === 13) handleSubmit(e);
+      })
+
+      function handleSubmit(e) {
+        e.preventDefault()
+        let targetUrl = window.urlEditor.value
+        if (!targetUrl.trim()) return
+
+        targetUrl = targetUrl.trim()
+        targetUrl = extractUrl(targetUrl)
+
+        let ppUrl = `${ppFullPrefix}${targetUrl}`
+        window.open(ppUrl)
+      }
+
+      function extractUrl(str) {
+        // 屏蔽分享内容中可能携带的多余文字
+        return str.replace(/([\s\S]*?)(https?:\/\/[^\s\[\(【，。！]+).*/, '$2')
+      }
+    </script>
+  </body>
+</html>

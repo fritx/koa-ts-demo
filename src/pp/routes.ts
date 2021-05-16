@@ -1,10 +1,14 @@
+import { promises as fs } from 'fs'
 import { Middleware } from 'koa'
+import * as libPath from 'path'
 import { resolve as urlResolve, UrlWithParsedQuery } from 'url'
 import { safeUrlParse } from '../lib/url'
-import { ppEncodingMode, ppParentPrefix, ppPrefix } from './config'
+import { ppEncodingMode, ppFullPrefix, ppParentPrefix, ppPrefix } from './config'
 import { ppProxy } from './proxy'
+import { safeInterpolate } from './replace/common'
 import { targetifyFit, targetifyFull } from './url/targetify'
 import cloneDeep = require('lodash/cloneDeep')
+import template = require('lodash/template')
 
 let handleProxy: Middleware = async ctx => {
   {
@@ -137,6 +141,20 @@ export let ppRoutes: Middleware = async (ctx, next) => {
     await handleProxy(ctx, next)
     return
   }
+  // ctx.status = 200
+  // ctx.body = 'hello proxy'
+  let distDir = libPath.resolve(__dirname, '../')
+  let srcDir = libPath.resolve(distDir, '../src')
+  const homeHtmlFile = libPath.resolve(srcDir, 'home/index.html')
+  const homeHtmlRaw = (await fs.readFile(homeHtmlFile)).toString()
+  console.log(homeHtmlRaw)
   ctx.status = 200
-  ctx.body = 'hello proxy'
+  ctx.type = 'text/html'
+  ctx.body = template(homeHtmlRaw, {
+    interpolate: safeInterpolate,
+  })({
+    data: JSON.stringify({
+      ppFullPrefix,
+    }),
+  })
 }
