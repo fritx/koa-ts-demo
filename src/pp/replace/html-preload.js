@@ -94,7 +94,9 @@
           let originalFn = cls.prototype[k]
           let faked = {
             [k]: function (...args) {
-              return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+              args = args.map(ensureReal)
+              args = args.map(ppify) // eg. window.fetch(url)
+              return originalFn.apply(ensureReal(this), args)
             }
           }
           fakeToStringAndValueOf(faked[k], k)
@@ -113,7 +115,9 @@
           let originalFn = obj[k]
           let faked = {
             [k]: function (...args) {
-              return originalFn.apply(ensureReal(this), args.map(v => ensureReal(v)))
+              args = args.map(ensureReal)
+              args = args.map(ppify) // eg. window.fetch(url)
+              return originalFn.apply(ensureReal(this), args)
             }
           }
           fakeToStringAndValueOf(faked[k], k)
