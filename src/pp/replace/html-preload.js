@@ -284,6 +284,25 @@
   window.__fakedWindow = _window
   // window.__originalWindow = window
 
+  /**
+   * TODO custom logic
+   * 隐藏 小红书、抖音 等站点的 分享者隐私信息
+   * TODO 也写到 http-proxy 拦截器层
+   * 暂时有点粗暴 直接将整个 queryObj 置空
+   */
+   if (targetHostname.includes('xiaohongshu.com')) {
+    const newUrl = targetHref.replace(/\?.*$/, '')
+    if (newUrl !== __fakedLocation.href) {
+      __fakedLocation.href = newUrl
+    }
+  }
+  if (targetHostname.includes('douyin.com')) {
+    const newUrl = targetHref.replace(/\?.*$/, '')
+    if (newUrl !== __fakedLocation.href) {
+      __fakedLocation.href = newUrl
+    }
+  }
+
   // https://www.jianshu.com/p/8c6c47f0eac6 imgs
   {
     let _setAttribute = Element.prototype.setAttribute
