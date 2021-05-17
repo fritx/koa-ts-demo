@@ -300,6 +300,19 @@
     const newUrl = targetHref.replace(/\?.*$/, '')
     if (newUrl !== __fakedLocation.href) {
       __fakedLocation.href = newUrl
+    } else {
+      let timer = setInterval(() => {
+        try {
+          let title = document.querySelector('[class^=container] [class^=footer] p:last-child').textContent
+          if (title.trim()) {
+            console.log(['douyin title', title])
+            document.title = title
+            clearInterval(timer)
+          }
+        } catch (err) {
+          console.error(['no title dom detected', err])
+        }
+      }, 500)
     }
   }
 

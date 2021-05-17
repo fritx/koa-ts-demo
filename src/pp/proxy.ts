@@ -45,6 +45,7 @@ ppProxy.on('proxyRes', (proxyRes, req, res) => {
     if (k === 'set-cookie') v = setCookieRewrite(v, ppres._ppCtx)
 
     if (k === 'content-security-policy') v = '' // github.com
+    if (k === 'content-security-policy-report-only') v = '' // douyin.com
     // if (k === 'referrer-policy') v = '' // github.com
     res.setHeader(k, v)
   })

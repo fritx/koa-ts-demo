@@ -147,7 +147,6 @@ export let ppRoutes: Middleware = async (ctx, next) => {
   let srcDir = libPath.resolve(distDir, '../src')
   const homeHtmlFile = libPath.resolve(srcDir, 'home/index.html')
   const homeHtmlRaw = (await fs.readFile(homeHtmlFile)).toString()
-  console.log(homeHtmlRaw)
   ctx.status = 200
   ctx.type = 'text/html'
   ctx.body = template(homeHtmlRaw, {
